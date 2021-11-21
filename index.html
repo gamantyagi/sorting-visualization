@@ -1,0 +1,285 @@
+<html>
+    <body>
+    
+    
+    <div id="cap" style="border-radius:20px;height:600px; width:1200px; background:#F0E9E7;margin:auto;position:relative;">
+
+    </div>
+
+    <label for="price">Speed Slow Motion x : </label><br>
+<input type="range" name="speed" id="speedRange" min="0" max="100" step="1" value="10" onchange="setSpeed(this.value)">
+
+<button style="margin:20px;" onclick="generateBlock()" >generate blocks</button>
+<button style="margin:20px;" onclick="bubleSort()" >bubble sort </button>
+<button style="margin:20px;" onclick="selectionSort()" >selection sort </button>
+<button style="margin:20px;" onclick="insertionSort()" >insertion sort </button>
+<button style="margin:20px;" onclick="quickSortLomuto()" >quick sort lomuto</button>
+<button style="margin:20px;" onclick="quickSortHoare()" >quick sort hoare</button>
+<button style="margin:20px;" onclick="mergeSortInPlace()" >merge sort</button>
+
+<input type="button" style="margin:20px;" onclick="stopStart()" id="stopButton" value="stop" >
+
+    </body>
+</html>
+
+<script>
+
+var speed = 10;
+
+function setSpeed(speedint)
+{
+    speed = speedint;
+}
+
+var stop = false;
+
+function stopStart()
+{
+    if (stop==false)
+    {
+        stop = true;
+        document.getElementById("stopButton").value = "start";
+    }
+    else
+    {
+        stop = false;
+        document.getElementById("stopButton").value = "stop";
+    }
+}
+
+async function delay()
+{
+    await new Promise(r => setTimeout(r, speed));
+    while(stop)
+    {
+        await new Promise(r => setTimeout(r, 10));
+    }
+}
+
+async function swapBlock(id1, id2, jump = 5){
+    if(id1==id2)
+    { return;}
+    var marginid1 = Number( (document.getElementById(id1).style.marginLeft).replace("px", '') );
+    var marginid2 = Number( (document.getElementById(id2).style.marginLeft).replace("px", '') );
+    document.getElementById(id1).style.marginBottom = -20;
+    document.getElementById(id2).style.marginBottom = -20;
+
+    document.getElementById(id1).style.zIndex = 500;
+    document.getElementById(id2).style.zIndex = 500;
+    
+    var marginid1t = marginid1;
+    var marginid2t = marginid2;
+
+    if(marginid1 < marginid2)
+    {
+        while(marginid1t != marginid2)
+        {
+            marginid1t +=jump;
+            marginid2t -=jump;
+            document.getElementById(id1).style.marginLeft = marginid1t+"px";
+            document.getElementById(id2).style.marginLeft = marginid2t+"px";
+            await delay()
+        }
+    }
+
+    else
+    {
+        while(marginid1t != marginid2)
+        {
+            marginid1t -=jump;
+            marginid2t +=jump;
+            document.getElementById(id1).style.marginLeft = marginid1t+"px";
+            document.getElementById(id2).style.marginLeft = marginid2t+"px";
+            await delay();
+
+        }
+    }
+
+    document.getElementById(id1).style.marginBottom = 0;
+    document.getElementById(id2).style.marginBottom = 0;
+    document.getElementById(id1).style.zIndex = 0;
+    document.getElementById(id2).style.zIndex = 0;
+
+    
+    document.getElementById(id1).id = "tempid123";
+    document.getElementById(id2).id = id1;
+    document.getElementById("tempid123").id = id2;
+
+
+
+}
+
+function getValue(id)
+{
+    return Number(document.getElementById(id).style.height.replace("px", "") );
+}
+var id = 0;
+function generateBlock()
+{
+    id = 0;
+    document.getElementById("cap").innerHTML = "";
+    for(var i=30; i<1150; i+=30)
+    {
+        
+        var randomBGcolor = Math.floor(Math.random()*16777215).toString(16);
+        var randomFONTcolor = (Number(`0x1${randomBGcolor}`) ^ 0xFFFFFF).toString(16).substr(1).toUpperCase();
+        var height = Math.floor((Math.random() * 500) + 50);
+        document.getElementById("cap").innerHTML += '<button id="'+id+'" style="height:'+height+'px;width:20px;position:absolute; bottom:0;margin-left:'+i+';color:'+randomFONTcolor+';background:#'+randomBGcolor+'"><b>'+String(height).split("").join("<br/>")+'</b></button>';
+        id+=1;
+    }
+}
+generateBlock()
+
+async function bubleSort()
+{
+    for(var i=0; i<id; i+=1)
+    {
+        for(var j=0; j<id-1; j+=1)
+        {
+            if(getValue(j) > getValue(j+1))
+            {
+                await swapBlock(j, j+1);
+            }
+        }
+    }
+}
+
+async function selectionSort()
+{
+    for(var i=0; i<id; i+=1)
+    {
+        var min_ind = i;
+        for(var j=i+1; j<id; j+=1)
+        {
+            if( getValue(j) < getValue(min_ind) )
+            {
+                min_ind = j;
+            }
+        }
+        
+        await swapBlock(i, min_ind);
+    }
+}
+
+async function insertionSort()
+{
+    document.getElementById("cap").innerHTML = '<button id="blockStore" style="height:1px;width:20px;position:absolute; bottom:0;color:white;background:white; margin-left:-60px;border:none;"></button>' + document.getElementById("cap").innerHTML;
+    
+    for(var i=1; i<id; i++)
+    {
+        var speedStore = speed;
+        speed = 0;
+        await swapBlock("blockStore", i, 10);
+        speed = speedStore;
+        var j = i-1;
+        while(j>=0 && getValue(j) > getValue("blockStore"))
+        {
+            await swapBlock(j, j+1);
+            j-=1;
+        }
+        var speedStore = speed;
+        speed = 0;
+        await swapBlock(j+1, "blockStore", 10);
+        speed = speedStore;
+
+    }
+    var element = document.getElementById("blockStore");
+    element.parentNode.removeChild(element);
+
+}
+
+
+async function lomutoPartition(l, h)
+{
+    let pivot = getValue(h);
+    let i=l-1;
+    for(let j=l; j<=h-1; j++)
+    {
+        if(getValue(j) < pivot)
+        {
+            i+=1;
+            await swapBlock(i, j);
+        }
+    }
+    await swapBlock(i+1, h);
+    return i+1;
+}
+async function quickSortLomuto(l=0, h=-1)
+{
+    if(h==-1)
+        h = id-1;
+    if(l<h)
+    {
+        let p = await lomutoPartition(l, h);
+        await quickSortLomuto(l, p-1);
+        await quickSortLomuto(p+1, h);
+    }
+     
+}
+
+async function hoarePartition(l, h)
+{
+    let pivot = getValue(l);
+    let i = l-1; j=h+1;
+    while(true)
+    {
+        do
+        {
+            i++;
+        }while(getValue(i) < pivot)
+        do{
+            j--;
+        }while(getValue(j) > pivot)
+        if(i>=j)
+            return j;
+        await swapBlock(i, j);
+    }
+}
+
+async function quickSortHoare(l=0, h=-1)
+{
+    if(h==-1)
+        h = id-1;
+    if(l<h)
+    {
+        let p = await hoarePartition(l, h);
+        await quickSortHoare(l, p);
+        await quickSortHoare(p+1, h);
+    }
+}
+
+function nextGap(gap)
+{
+    if(gap <= 1)
+        return 0;
+    return Math.floor(Math.ceil(gap / 2.0));
+}
+
+async function inPlaceMerge(start, end)
+{
+    let gap = end-start +1;
+    for(gap=nextGap(gap); gap>0; gap=nextGap(gap))
+    {
+        for(let i=start; i+gap <= end; i++)
+        {
+            let j = i+gap;
+            if(getValue(i) > getValue(j))
+                await swapBlock(i, j);
+        }
+    }
+}
+
+async function mergeSortInPlace(s=0, e=-1)
+{
+    if(e==-1)
+        e = id-1;
+    if(s!=e)
+    {
+        let mid = Math.floor((s+e)/2);
+        await mergeSortInPlace(s, mid);
+        await mergeSortInPlace(mid+1, e);
+        await inPlaceMerge(s, e);
+    }
+}
+
+</script>
